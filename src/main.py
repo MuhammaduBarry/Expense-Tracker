@@ -46,7 +46,7 @@ def list():
     console.print(table)
 
 @app.command()
-def summary(month: int = None):
+def summary(month: Annotated[str,typer.Option(...,help="Optional month command if needed")] = None):
     """Give a summary for entire expense or specific month"""
     month_dict = {
         1: "January",
@@ -68,15 +68,34 @@ def summary(month: int = None):
     total_month_sum = 0
     total_sum = 0
 
+    # If optional command is given....
     if month is not None:
         for expenses in data["list_of_expenses"]:
             if expenses["month"] == month:
                 total_month_sum += expenses["amount"]
         print(f"[blue]Total expenses for {month_dict[month]}:[/blue] [green]${total_month_sum:.2f}[/green]")
+    # If optional command is not given.....
     elif month is None:
         for expenses in data["list_of_expenses"]:
             total_sum += expenses["amount"]
         print(f"[blue]Total expenses for all months:[/blue] [green]${total_sum:.2f}[/green]")
+
+@app.command()
+def delete(id: Annotated[int, typer.Option(..., help="Id is required to use delete command")]):
+    data = load_json(json_file_path)
+    # Loop through each expense
+    for expenses in data["list_of_expenses"]:
+        # Check for matching id
+        if expenses["id"] == id:
+            # Remove expense from list
+            data["list_of_expenses"].remove(expenses)
+
+    # Update the amount of expenses the list contains
+    decrement_amount = data.get("amount_of_expenses", 0) - 1
+    data["amount_of_expenses"] = decrement_amount
+
+    print(f"[bold red]You have deleted an expense with id: {id}[/bold red]")
+    dump_json(data,json_file_path)
 
 
 if __name__ == "__main__":
